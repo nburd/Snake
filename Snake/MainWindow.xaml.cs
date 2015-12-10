@@ -85,47 +85,7 @@ namespace Snake
         }
 
         #region Draw
-
-        private void DrawUp()
-        {
-            Displacement();
-            list[0] = new Point(list[0].X - 10, list[0].Y);
-            CheckToSmash();
-            CheckBorder();
-            if (list[0].X == food.X && list[0].Y == food.Y)
-                EatFood();
-        }
-
-        private void DrawDown()
-        {
-            Displacement();
-            list[0] = new Point(list[0].X + 10, list[0].Y);
-            CheckToSmash();
-            CheckBorder();
-            if (list[0].X == food.X && list[0].Y == food.Y)
-                EatFood();
-        }
-
-        private void DrawLeft()
-        {
-            Displacement();
-            list[0] = new Point(list[0].X, list[0].Y - 10);            
-            CheckToSmash();
-            CheckBorder();
-            if (list[0].X == food.X && list[0].Y == food.Y)
-                EatFood();
-        }
-
-        private void DrawRight()
-        {
-            Displacement();
-            list[0] = new Point(list[0].X, list[0].Y + 10);
-            CheckToSmash();
-            CheckBorder();
-            if (list[0].X == food.X && list[0].Y == food.Y)
-                EatFood();
-        }
-
+                
         private void Draw()
         {
             for (int i = 0; i < count; i++)
@@ -155,6 +115,7 @@ namespace Snake
 
         private void CreateTimer()
         {
+            timer?.Stop();
             timer = new DispatcherTimer();
             timer.Interval = new TimeSpan(0, 0, 0, 0, speedValue);
             timer.Tick += new EventHandler(TimerTick);
@@ -163,55 +124,52 @@ namespace Snake
 
         private void TimerTick(object sender, EventArgs e)
         {
-            Canvas.Children.Clear();            
+            Canvas.Children.Clear();
+            Displacement();
             if (side == "up")
-                DrawUp();
+                list[0] = new Point(list[0].X - 10, list[0].Y);
             else if (side == "left")
-                DrawLeft();
+                list[0] = new Point(list[0].X, list[0].Y - 10);
             else if (side == "right")
-                DrawRight();
+                list[0] = new Point(list[0].X, list[0].Y + 10);
             else if (side == "down")
-                DrawDown();
+                list[0] = new Point(list[0].X + 10, list[0].Y);
+
+            CheckBorder();
+
+            if (list[0].X == food.X && list[0].Y == food.Y)
+                EatFood();
         }
 
         private void KeysDown(object sender, KeyEventArgs e)
         {
-            timer.Stop();
             if (e.Key == Key.Left)
             {
                 if (side == "down" || side == "up")
                 {
                     side = "left";
-                    CreateTimer();
                 }
-                else CreateTimer();
             }
             else if (e.Key == Key.Right)
             {
                 if (side == "down" || side == "up")
                 {
                     side = "right";
-                    CreateTimer();
                 }
-                else CreateTimer();
             }
             else if (e.Key == Key.Up)
             {
                 if (side == "left" || side == "right")
                 {
                     side = "up";
-                    CreateTimer();
                 }
-                else CreateTimer();
             }
             else if (e.Key == Key.Down)
             {
                 if (side == "left" || side == "right")
                 {
                     side = "down";
-                    CreateTimer();
                 }
-                else CreateTimer();
             }
         }
 
@@ -222,43 +180,38 @@ namespace Snake
         {
             if(list[0].X < 0)
             {
-                list[0] = new Point((int)Canvas.Width - 10, list[0].Y);
-                CheckToSmash();
-                Draw();
+                list[0] = new Point((int)Canvas.Width - 10, list[0].Y);                
             }
             else if(list[0].X >= (int)Canvas.Width)
             {
                 list[0] = new Point(0, list[0].Y);
-                CheckToSmash();
-                Draw();
             }
             else if(list[0].Y < 0)
             {
                 list[0] = new Point(list[0].X, (int)Canvas.Height - 10);
-                CheckToSmash();
-                Draw();
             }
             else if (list[0].Y >= (int)Canvas.Height)
             {
-                list[0] = new Point(list[0].X, 0);
-                CheckToSmash();
-                Draw();
+                list[0] = new Point(list[0].X, 0);                
             }
+
+            if (Smashed())
+                CreateNewGame();
+
             Draw();
         }
 
-        private void CheckToSmash()
+        private bool Smashed()
         {
             for(int i = 1; i < count; i++)
             {
                 if (list[0].X == list[i].X && list[0].Y == list[i].Y)
                 {
-                    MessageBox.Show("Game over");
-                    // load new canvas//
+                    MessageBox.Show("Game over");                    
+                    return true;
                 }
-                else
-                    continue;
             }
+            return false;
         }
 
         private void EatFood()
@@ -270,9 +223,7 @@ namespace Snake
                 score += 50;
                 list.Add(temp);
             }
-            Canvas.Children.Clear();
             food = GetRandomCoordFood();
-            Draw();
         }
 
         #endregion
