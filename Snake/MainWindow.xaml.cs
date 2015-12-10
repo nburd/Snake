@@ -29,26 +29,35 @@ namespace Snake
         private Point point;
         private Point food;
         private int count = 3;
+        private int score = 0;
         DispatcherTimer timer;
         private string side = "up";
         private List<Point> list = new List<Point>();
-        private List<Point> foods = new List<Point>();
-        private int speedValue = 800;
+        private int speedValue;
         private Random rnd = new Random();
 
         public MainWindow()
         {
             InitializeComponent();
-            StartSnake();
         }        
 
         private void StartSnake()
-        {
+        {           
             point = GetRandomCoord();
             for (int i = 0; i < count; i++)
                 list.Add(new Point(point.X + 10 * i, point.Y));
-            food = GetRandomCoord();
+            food = GetRandomCoordFood();
             Draw();
+        }
+
+        private void CreateNewGame()
+        {
+            count = 3;
+            list.Clear();
+            score = 0;
+            speedValue = 200;
+            StartSnake();
+            CreateTimer();
         }
 
         private void Displacement()
@@ -59,10 +68,20 @@ namespace Snake
 
         private Point GetRandomCoord()
         {
-            rnd = new Random();
             var x = rnd.Next((int)Canvas.Width - count * 10);
             var y = rnd.Next((int)Canvas.Height - count * 10);
             return new Point(x / 10 * 10, y / 10 * 10);
+        }
+
+        private Point GetRandomCoordFood()
+        {
+            var point = GetRandomCoord();
+            for (int i = 0; i < count; i++)
+            {
+                if (point.X == list[i].X && point.Y == list[i].Y)
+                    point = GetRandomCoord();
+            }
+            return point;
         }
 
         #region Draw
@@ -71,28 +90,30 @@ namespace Snake
         {
             Displacement();
             list[0] = new Point(list[0].X - 10, list[0].Y);
-            //if (list[0] == food)
-               // EatFood();
             CheckToSmash();
-            CheckBorder();            
+            CheckBorder();
+            if (list[0].X == food.X && list[0].Y == food.Y)
+                EatFood();
         }
 
         private void DrawDown()
         {
             Displacement();
             list[0] = new Point(list[0].X + 10, list[0].Y);
-            //if (list[0] == food)
-              //  EatFood();
             CheckToSmash();
             CheckBorder();
+            if (list[0].X == food.X && list[0].Y == food.Y)
+                EatFood();
         }
 
         private void DrawLeft()
         {
             Displacement();
-            list[0] = new Point(list[0].X, list[0].Y - 10);
+            list[0] = new Point(list[0].X, list[0].Y - 10);            
             CheckToSmash();
             CheckBorder();
+            if (list[0].X == food.X && list[0].Y == food.Y)
+                EatFood();
         }
 
         private void DrawRight()
@@ -101,6 +122,8 @@ namespace Snake
             list[0] = new Point(list[0].X, list[0].Y + 10);
             CheckToSmash();
             CheckBorder();
+            if (list[0].X == food.X && list[0].Y == food.Y)
+                EatFood();
         }
 
         private void Draw()
@@ -108,6 +131,7 @@ namespace Snake
             for (int i = 0; i < count; i++)
                 Paint(list[i].X, list[i].Y, "Snake");
             Paint(food.X, food.Y, "Food");
+            Score.Text = score.ToString();
         }
 
         private void Paint(double x, double y, string name)
@@ -117,10 +141,12 @@ namespace Snake
             Canvas.SetLeft(rec, y);
             rec.Width = 10;
             rec.Height = 10;
-            if(name == "Snake")
+            if (name == "Snake")
                 rec.Fill = new SolidColorBrush(Colors.Red);
-            else if(name == "Food")
+            else if (name == "Food")
                 rec.Fill = new SolidColorBrush(Colors.Blue);
+            else if (name == "FoodClear")
+                rec.Fill = new SolidColorBrush(Colors.White);
             Canvas.Children.Add(rec);
         }
 
@@ -196,11 +222,11 @@ namespace Snake
         {
             if(list[0].X < 0)
             {
-                list[0] = new Point((int)Canvas.Height - 10, list[0].Y);
+                list[0] = new Point((int)Canvas.Width - 10, list[0].Y);
                 CheckToSmash();
                 Draw();
             }
-            else if(list[0].X >= Canvas.Height)
+            else if(list[0].X >= (int)Canvas.Width)
             {
                 list[0] = new Point(0, list[0].Y);
                 CheckToSmash();
@@ -208,11 +234,11 @@ namespace Snake
             }
             else if(list[0].Y < 0)
             {
-                list[0] = new Point(list[0].X, (int)Canvas.Width - 10);
+                list[0] = new Point(list[0].X, (int)Canvas.Height - 10);
                 CheckToSmash();
                 Draw();
             }
-            else if (list[0].Y >= Canvas.Width)
+            else if (list[0].Y >= (int)Canvas.Height)
             {
                 list[0] = new Point(list[0].X, 0);
                 CheckToSmash();
@@ -227,39 +253,34 @@ namespace Snake
             {
                 if (list[0].X == list[i].X && list[0].Y == list[i].Y)
                 {
-                    Canvas.Children.Clear();
-                    var result = MessageBox.Show("Игра закончена! Начать новую игру?", "New Game", MessageBoxButton.YesNo);
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        list.Clear();
-                        StartSnake();
-                        CreateTimer();
-                        break;
-                    }
-                    else
-                        Close();
+                    MessageBox.Show("Game over");
+                    // load new canvas//
                 }
+                else
+                    continue;
             }
         }
 
-        //private void EatFood()
-        //{
-        //    if(list[0].X == food.X && list[0].Y == food.Y)
-        //    {
-        //        var temp = list[count - 1];
-        //        ++count;
-        //        list.Add(temp);
-        //    }
-        //}
+        private void EatFood()
+        {
+            if (list[0].X == food.X && list[0].Y == food.Y)
+            {
+                var temp = list[count - 1];
+                ++count;
+                score += 50;
+                list.Add(temp);
+            }
+            Canvas.Children.Clear();
+            food = GetRandomCoordFood();
+            Draw();
+        }
 
         #endregion
         #region Events Handlers
 
         private void CreateNewGame(object sender, RoutedEventArgs e)
         {
-            list.Clear();
-            StartSnake();
-            //CreateTimer();
+            CreateNewGame();
         }
 
         private void RadioButtonEasy(object sender, RoutedEventArgs e) => speedValue = 500;
@@ -271,12 +292,5 @@ namespace Snake
 
         #endregion
         
-        private Point GetCoordFood()
-        {
-            var point = GetRandomCoord();
-            if (point.Y == list[0].Y)
-                point = GetRandomCoord();
-            return point;
-        }
     }
 }
